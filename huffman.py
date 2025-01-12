@@ -78,7 +78,6 @@ def huffman_binarnie(output_file, kody, zakodowany_tekst):
     ba = bitarray(zakodowany_tekst)
     with open(output_file, 'wb') as file:
         file.write(slownik.encode('utf-8') + b'\n')
-        file.write(b'Huffman:\n')
         file.write(ba.tobytes())
 
 # Kompresja pliku
