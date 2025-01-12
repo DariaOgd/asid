@@ -1,6 +1,7 @@
 from collections import Counter
 import os
 from bitarray import bitarray
+import json
 
 # kopiec
 def napraw_kopiec(heap, i, heap_size):
@@ -74,7 +75,7 @@ def compare_file_sizes(input_file, compressed_file):
     print(f"Rozmiar pliku skompresowanego: {compressed_size} bajtów")
 
 def huffman_binarnie(output_file, kody, zakodowany_tekst):
-    slownik = ','.join(f"{znak}:{kod}" for znak, kod in kody.items())
+    slownik = json.dumps(kody)
     ba = bitarray(zakodowany_tekst)
     with open(output_file, 'wb') as file:
         file.write(slownik.encode('utf-8') + b'\n')
