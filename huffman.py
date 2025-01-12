@@ -1,5 +1,7 @@
 from collections import Counter
 import os
+from bitarray import bitarray
+
 # kopiec
 def napraw_kopiec(heap, i, heap_size):
     left = 2 * i + 1
@@ -13,12 +15,10 @@ def napraw_kopiec(heap, i, heap_size):
         heap[i], heap[smallest] = heap[smallest], heap[i]
         napraw_kopiec(heap, smallest, heap_size)
 
-
 def buduj_kopiec(heap):
     heap_size = len(heap)
     for i in range(heap_size // 2 - 1, -1, -1):
         napraw_kopiec(heap, i, heap_size)
-
 
 def extract_min(heap):
     if len(heap) < 1:
@@ -28,7 +28,6 @@ def extract_min(heap):
     heap.pop()
     napraw_kopiec(heap, 0, len(heap))
     return min_node
-
 
 def dodaj_do_kopca(heap, x):
     heap.append(x)
@@ -41,7 +40,7 @@ def dodaj_do_kopca(heap, x):
 # huffman
 def huffman(C):
     n = len(C)
-    Q = [(char, freq, None, None) for char, freq in C.items()]
+    Q = [(char, freq, 'lisc', 'lisc') for char, freq in C.items()]
     buduj_kopiec(Q)
     for _ in range(1, n):
         z_left = extract_min(Q)
@@ -52,19 +51,19 @@ def huffman(C):
     return extract_min(Q)
 
 #slownik
-def generuj_huffmana(node):
+def generuj_slownik_huffmana(node):
     kody = {}
     stos = [(node, "")]
     while stos:
-        current, code = stos.pop()
-        char, _, left, right = current
+        curr, kod = stos.pop()
+        char, _, l, r = curr
         if char:
-            kody[char] = code
+            kody[char] = kod
         else:
-            if right:
-                stos.append((right, code + "1"))
-            if left:
-                stos.append((left, code + "0"))
+            if r:
+                stos.append((r, kod + "1"))
+            if l:
+                stos.append((l, kod + "0"))
     return kody
 
 def zlicz_znaki(file_path):
@@ -73,13 +72,14 @@ def zlicz_znaki(file_path):
     czestotliwosc = Counter(text)
     return text, dict(czestotliwosc)
 
-# kompresja
-def huffman_binarnie(output_file, codes, encoded_text):
-    slownik = ', '.join(f"'{char}':'{code}'" for char, code in codes.items())
-    binarnie = int(encoded_text, 2).to_bytes((len(encoded_text) + 7) // 8, 'big')
-    with open(output_file, 'wb') as file:
-        file.write(f"{slownik}\n".encode('utf-8'))
+def huffman_binarnie(output, kody, zakodowany_tekst):
+    slownik = '\n'.join(f"{char}:{code}" for char, code in kody.items())
+    ba = bitarray(zakodowany_tekst)
+    binarnie = ba.tobytes()
+    with open(output, 'wb') as file:
+        file.write(slownik.encode('utf-8') + b'\n')
         file.write(binarnie)
+    return slownik, binarnie
 
 # funkcja pomocniczna - nie do sprawdzenia
 def compare_file_sizes(input_file, compressed_file):
@@ -91,14 +91,14 @@ def compare_file_sizes(input_file, compressed_file):
 def kompresuj_plik(plik_wejsciowy, plik_wyjsciowy):
     tekst, freq = zlicz_znaki(plik_wejsciowy)
     drzewo_huffmana = huffman(freq)
-    kody = generuj_huffmana(drzewo_huffmana)
+    kody = generuj_slownik_huffmana(drzewo_huffmana)
     zakodowany_tekst = ''.join(kody[znak] for znak in tekst)
     huffman_binarnie(plik_wyjsciowy, kody, zakodowany_tekst)
     compare_file_sizes(plik_wejsciowy, plik_wyjsciowy)
 
 def main():
     input = "input.txt"
-    skompersowany = "skompersowany.txt"
-    kompresuj_plik(input, skompersowany)
+    skompresowany = "skompresowany.txt"
+    kompresuj_plik(input, skompresowany)
 
 main()
