@@ -66,20 +66,15 @@ def generuj_slownik_huffmana(node):
                 stos.append((l, kod + "0"))
     return kody
 
-def zlicz_znaki(file_path):
-    with open(file_path, 'r', encoding='utf-8') as file:
-        text = file.read()
-    czestotliwosc = Counter(text)
-    return text, dict(czestotliwosc)
-
 def huffman_binarnie(output, kody, zakodowany_tekst):
-    slownik = '\n'.join(f"{char}:{code}" for char, code in kody.items())
+    skrocony_slownik = '\n'.join(f"{char}:{code}" for char, code in kody.items())
     ba = bitarray(zakodowany_tekst)
     binarnie = ba.tobytes()
     with open(output, 'wb') as file:
-        file.write(slownik.encode('utf-8') + b'\n')
+        file.write(skrocony_slownik.encode('utf-8') + b'\n')
+        file.write(b"Huffman\n")
         file.write(binarnie)
-    return slownik, binarnie
+    return skrocony_slownik, binarnie
 
 # funkcja pomocniczna - nie do sprawdzenia
 def compare_file_sizes(input_file, compressed_file):
@@ -88,17 +83,28 @@ def compare_file_sizes(input_file, compressed_file):
     print(f"Rozmiar pliku wejściowego: {input_size} bajtów")
     print(f"Rozmiar pliku skompresowanego: {compressed_size} bajtów")
 
+
 def kompresuj_plik(plik_wejsciowy, plik_wyjsciowy):
-    tekst, freq = zlicz_znaki(plik_wejsciowy)
-    drzewo_huffmana = huffman(freq)
-    kody = generuj_slownik_huffmana(drzewo_huffmana)
+    with open(plik_wejsciowy, 'r', encoding='utf-8') as file:
+        tekst = file.read()
+    freq = Counter(tekst)
+    drzewo = huffman(freq)
+    kody = generuj_slownik_huffmana(drzewo)
     zakodowany_tekst = ''.join(kody[znak] for znak in tekst)
-    huffman_binarnie(plik_wyjsciowy, kody, zakodowany_tekst)
-    compare_file_sizes(plik_wejsciowy, plik_wyjsciowy)
+    if len(kody) == 1:
+        znak, kod = next(iter(kody.items()))
+        zakodowany_tekst = '0' * len(tekst)
+        kody = {znak: '0'}
+    slownik_string = ','.join(f"{znak}:{kod}" for znak, kod in kody.items())
+    ba = bitarray(zakodowany_tekst)
+    with open(plik_wyjsciowy, 'wb') as file:
+        file.write(slownik_string.encode('utf-8') + b'\n')
+        file.write(ba.tobytes())
 
 def main():
     input = "input.txt"
     skompresowany = "skompresowany.txt"
     kompresuj_plik(input, skompresowany)
+    compare_file_sizes(input, skompresowany)
 
 main()
